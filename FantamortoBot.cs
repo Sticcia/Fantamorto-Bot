@@ -39,7 +39,7 @@ namespace FantamortoBot
 			{
 				Console.WriteLine($"Received message: {e.Message.Text} from user: {e.Message.From.FirstName}");
 
-				var ch = new CommandHandler(filePath, e);
+				var ch = new CommandHandler(filePath, e.Message);
 				var commandsMap = new Dictionary<string, Action>(StringComparer.InvariantCultureIgnoreCase)
 				{
 					["/new"] = ch.NewList,

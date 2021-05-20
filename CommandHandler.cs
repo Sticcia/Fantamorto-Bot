@@ -1,90 +1,131 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Collections.Generic;
 
-using Telegram.Bot.Args;
+using Telegram.Bot.Types;
 
 namespace Fantamorto_Bot
 {
 	class CommandHandler
 	{
-		private readonly MessageEventArgs e;
-		private readonly string fileName;
-		private string response = "";
+		private readonly Message _message;
+		private readonly string _fileName;
+		private string _response;
 
-		public CommandHandler(string filePath, MessageEventArgs messageEvent)
+		public CommandHandler(string filePath, Message message)
 		{
-			e = messageEvent;
-			fileName = filePath + e.Message.From.Id.ToString();
-			response = "";
+			_message = message;
+			_fileName = filePath + _message.From.Id.ToString();
+			_response = "";
 		}
 
 		public string GetResponse()
 		{
-			return response;
+			return _response;
 		}
 
 		public void NewList()
 		{
-			if (File.Exists(fileName))
+			if (System.IO.File.Exists(_fileName))
 			{
-				response = $"List for {e.Message.From.Id} already exists";
-				PrintList();
+				_response = $"List for {_message.From.FirstName} already exists, use /list to show list";
 			}
 			else
 			{
-				response = $"Created new list for {e.Message.From.FirstName}, use /add to add names";
-				using FileStream fs = File.Create(fileName);
+				_response = $"Created a new list for {_message.From.FirstName}, use /add to add names";
+				using FileStream fs = System.IO.File.Create(_fileName);
 			}
 		}
 
 		public void PrintList()
 		{
-			if (File.Exists(fileName))
+			if (System.IO.File.Exists(_fileName))
 			{
-				if (new FileInfo(fileName).Length == 0)
+				if (new FileInfo(_fileName).Length == 0)
 				{
-					response = "Empty list, use /add to add names";
+					_response = "Empty list, use /add to add names";
 				}
 				else
 				{
-					response = File.ReadAllText(fileName);
+					_response = System.IO.File.ReadAllText(_fileName);
 				}
 			}
 			else
 			{
-				response = $"No list for {e.Message.From.FirstName} was found, use /new to create a new list";
+				_response = $"No list for {_message.From.FirstName} was found, use /new to create a new list";
 			}
 		}
 
 		public void AddName()
 		{
-			var args = e.Message.Text.Split(" ", 2);
+			var args = _message.Text.Split(" ", 2);
 
-			if (File.Exists(fileName))
+			if (System.IO.File.Exists(_fileName))
 			{
 				if (args.Length != 2)
 				{
-					response = "Argument missing, use /add <name>";
+					_response = "Argument missing, use /add <name>";
 				}
 				else
 				{
-					File.AppendAllTextAsync(fileName, $"{args[1]}\n");
-					response = $"Added {args[1]} to {fileName}";
+					System.IO.File.AppendAllTextAsync(_fileName, $"{args[1]}\n");
+					_response = $"Added {args[1]} to list, use /list to show list";
 				}
 			}
 			else
 			{
-				response = $"No list for {e.Message.From.FirstName} was found, use /new to create a new list";
+				_response = $"No list for {_message.From.FirstName} was found, use /new to create a new list";
 			}
 		}
 
 		public void RemoveName()
 		{
-			response = "Command not implemented yet";
+			List<string> newList = new List<string>();
+			bool found = false;
+			var args = _message.Text.Split(" ", 2);
+
+			if (System.IO.File.Exists(_fileName))
+			{
+				if (args.Length != 2)
+				{
+					_response = "Argument missing, use /remove <name>";
+				}
+				else
+				{
+					var oldList = System.IO.File.ReadAllLines(_fileName);
+
+					foreach (var name in oldList)
+					{
+						if (String.Compare(name, args[1], StringComparison.InvariantCultureIgnoreCase) == 0)
+						{
+							found = true;
+						}
+						else
+						{
+							newList.Add(name);
+						}
+					}
+
+					if (found)
+					{
+						System.IO.File.WriteAllLines(_fileName, newList);
+						_response = $"Removed {args[1]} from list, use /list to show list";
+					}
+					else
+					{
+						_response = $"{args[1]} not found, use /list to show list";
+					}
+				}
+			}
+			else
+			{
+				_response = $"No list for {_message.From.FirstName} was found, use /new to create a new list";
+			}
 		}
 
 		public void AddDead()
 		{
-			response = "Command not implemented yet";
+			_response = "Command not implemented yet";
 		}
 	}
 }
